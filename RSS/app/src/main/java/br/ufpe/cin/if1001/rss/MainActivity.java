@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -13,6 +15,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends Activity {
@@ -27,7 +30,7 @@ public class MainActivity extends Activity {
     //http://pox.globo.com/rss/g1/tecnologia/
 
     //use ListView ao invés de TextView - deixe o atributo com o mesmo nome
-    private TextView conteudoRSS;
+    private ListView conteudoRSS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +38,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         //use ListView ao invés de TextView - deixe o ID no layout XML com o mesmo nome conteudoRSS
         //isso vai exigir o processamento do XML baixado da internet usando o ParserRSS
-        conteudoRSS = (TextView) findViewById(R.id.conteudoRSS);
+        conteudoRSS = (ListView) findViewById(R.id.conteudoRSS);
     }
 
     @Override
@@ -44,37 +47,41 @@ public class MainActivity extends Activity {
         new CarregaRSStask().execute(RSS_FEED);
     }
 
-    private class CarregaRSStask extends AsyncTask<String, Void, String> {
+    private class CarregaRSStask extends AsyncTask<String, Void, ArrayAdapter<ItemRSS>> {
         @Override
         protected void onPreExecute() {
             Toast.makeText(getApplicationContext(), "iniciando...", Toast.LENGTH_SHORT).show();
         }
 
         @Override
-        protected String doInBackground(String... params) {
-            String conteudo = "";
+        protected ArrayAdapter<ItemRSS> doInBackground(String... params) {
+
+            // default list has a item error
+            List<ItemRSS> conteudo = Arrays.asList(
+                new ItemRSS("Error", "", "", "Error getting feed"));
+
             try {
-                List<ItemRSS> rssFeed = getRssFeed(params[0]);
-                for (ItemRSS item : rssFeed)
-                conteudo += item.getDescription() + "\n";
+                conteudo = getRssFeed(params[0]);
             } catch (IOException e) {
-                conteudo = "provavelmente deu erro...";
                 e.printStackTrace();
             }
-            return conteudo;
+            // gerar o novo adapter com o conteudo
+            return new ItemRSSAdapter(getApplicationContext(), conteudo);
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(ArrayAdapter<ItemRSS> s) {
             Toast.makeText(getApplicationContext(), "terminando...", Toast.LENGTH_SHORT).show();
 
             //ajuste para usar uma ListView
             //o layout XML a ser utilizado esta em res/layout/itemlista.xml
-            conteudoRSS.setText(s);
+            // setar o adapter do ListView conteudo
+            conteudoRSS.setAdapter(s);
         }
     }
 
     //Opcional - pesquise outros meios de obter arquivos da internet
+    // return List<ItemRSS>
     private List<ItemRSS> getRssFeed(String feed) throws IOException {
         InputStream in = null;
         List<ItemRSS> rssFeed = new ArrayList<>();
@@ -90,9 +97,10 @@ public class MainActivity extends Activity {
             }
             byte[] response = out.toByteArray();
             String feedStr = new String(response, "UTF-8");
+            // parse string feed to List<ItemRSS>
             rssFeed = ParserRSS.parse(feedStr);
 
-        } catch (Exception e) {
+        } catch (Exception e) { // Adding catcher because ParserRSS can throw Exception
             Log.e("error", e.getMessage());
         } finally {
             if (in != null) {
