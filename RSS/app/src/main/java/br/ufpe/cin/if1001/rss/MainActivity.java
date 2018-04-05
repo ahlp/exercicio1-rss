@@ -3,6 +3,7 @@ package br.ufpe.cin.if1001.rss;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -11,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
 
@@ -49,10 +52,13 @@ public class MainActivity extends Activity {
 
         @Override
         protected String doInBackground(String... params) {
-            String conteudo = "provavelmente deu erro...";
+            String conteudo = "";
             try {
-                conteudo = getRssFeed(params[0]);
+                List<ItemRSS> rssFeed = getRssFeed(params[0]);
+                for (ItemRSS item : rssFeed)
+                conteudo += item.getDescription() + "\n";
             } catch (IOException e) {
+                conteudo = "provavelmente deu erro...";
                 e.printStackTrace();
             }
             return conteudo;
@@ -69,20 +75,25 @@ public class MainActivity extends Activity {
     }
 
     //Opcional - pesquise outros meios de obter arquivos da internet
-    private String getRssFeed(String feed) throws IOException {
+    private List<ItemRSS> getRssFeed(String feed) throws IOException {
         InputStream in = null;
-        String rssFeed = "";
+        List<ItemRSS> rssFeed = new ArrayList<>();
         try {
             URL url = new URL(feed);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             in = conn.getInputStream();
             ByteArrayOutputStream out = new ByteArrayOutputStream();
+
             byte[] buffer = new byte[1024];
             for (int count; (count = in.read(buffer)) != -1; ) {
                 out.write(buffer, 0, count);
             }
             byte[] response = out.toByteArray();
-            rssFeed = new String(response, "UTF-8");
+            String feedStr = new String(response, "UTF-8");
+            rssFeed = ParserRSS.parse(feedStr);
+
+        } catch (Exception e) {
+            Log.e("error", e.getMessage());
         } finally {
             if (in != null) {
                 in.close();
