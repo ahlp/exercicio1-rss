@@ -35,9 +35,11 @@ public class ItemRSSAdapter extends ArrayAdapter<ItemRSS> {
             convertView = inflater.inflate(R.layout.itemlista, null);
         }
 
-        // setting title and date on respectives textviews
+        // setting title with link
         TextView title = (TextView) convertView.findViewById(R.id.item_titulo);
         String titleLink = "<a href=\"" + item.getLink() + "\" >" + item.getTitle() + "</a>";
+
+        // method Html.fromHtml deprecated on Android Version >= N
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             title.setMovementMethod(LinkMovementMethod.getInstance());
             title.setText(Html.fromHtml(titleLink, Html.FROM_HTML_MODE_LEGACY));
@@ -47,6 +49,7 @@ public class ItemRSSAdapter extends ArrayAdapter<ItemRSS> {
             title.setText(Html.fromHtml(titleLink));
         }
 
+        // set date TextView
         TextView date = (TextView) convertView.findViewById(R.id.item_data);
         date.setText(item.getPubDate());
 

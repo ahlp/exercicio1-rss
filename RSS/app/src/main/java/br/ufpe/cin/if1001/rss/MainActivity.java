@@ -1,6 +1,8 @@
 package br.ufpe.cin.if1001.rss;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,11 +18,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 public class MainActivity extends Activity {
 
     //ao fazer envio da resolucao, use este link no seu codigo!
-    private final String RSS_FEED = "http://leopoldomt.com/if1001/g1brasil.xml";
+    //private final String RSS_FEED_DEFAULT = "http://leopoldomt.com/if1001/g1brasil.xml";
 
     //OUTROS LINKS PARA TESTAR...
     //http://rss.cnn.com/rss/edition.rss
@@ -43,7 +46,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-        new CarregaRSStask().execute(RSS_FEED);
+
+        // instance preferences
+        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+
+        // get preferences in "rssfeed" if not exist use "http://leopoldomt.com/if1001/g1brasil.xml"
+        String rssFeed = sharedPref.getString(getString(R.string.rss_feed_key),
+                getString(R.string.rss_feed_default));
+        new CarregaRSStask().execute(rssFeed);
     }
 
     private class CarregaRSStask extends AsyncTask<String, Void, ArrayAdapter<ItemRSS>> {
@@ -80,7 +90,7 @@ public class MainActivity extends Activity {
     }
 
     //Opcional - pesquise outros meios de obter arquivos da internet
-    // return List<ItemRSS>
+    // return List<ItemRSS> to set an adapter to show all
     private List<ItemRSS> getRssFeed(String feed) throws IOException {
         InputStream in = null;
         List<ItemRSS> rssFeed = new ArrayList<>();
